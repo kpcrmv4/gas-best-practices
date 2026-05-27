@@ -127,7 +127,10 @@ if (res.ok && res.dataUrl) {
 const file = folder.createFile(blob);
 try {
   file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-} catch (e) {}
+} catch (e) {
+  // domain policy block — ไฟล์ยังเซฟได้ แค่ public link ไม่ได้
+  Logger.log('[saveImage] setSharing failed (likely domain policy): ' + e.message);
+}
 
 // คืน thumbnail URL
 return {
@@ -140,6 +143,110 @@ return {
 ```
 
 **Trade-off:** anyone-with-link = ไม่ secret อีกแล้ว — ใช้ได้กับ user-generated content ที่ไม่ sensitive (รูปสินค้า, รูป cover) อย่าใช้กับเอกสารส่วนตัว
+
+---
+
+## Rule #4.1: `setSharing(ANYONE_WITH_LINK)` แตกบน Google Workspace ของหน่วยงาน/โรงเรียน
+
+**Bug จริง (case study):** โค้ดเดิมรัน OK บน Gmail ส่วนตัว → deploy ให้ครู deploy account `@school.ac.th` แล้วเด้ง:
+
+```
+Exception: ไม่ได้รับอนุญาต (Permission denied): DriveApp
+```
+
+**สาเหตุ:** Google Workspace admin ของ org (โรงเรียน, หน่วยงานรัฐ, บริษัทใหญ่) ตั้ง policy "**Block external sharing**" หรือ "**Restrict to domain only**" — `ANYONE_WITH_LINK` คือ external = ถูกบล็อก → DriveApp throw ทันที
+
+User เห็น error ตอนกดบันทึก แอปพังทั้งระบบเพราะ exception bubble up ออก function
+
+### ✗ Bad — assume sharing ทำได้ + throw บล็อกทั้งฟังก์ชัน
+
+```javascript
+function uploadImageAndSave(...) {
+  const file = folder.createFile(blob);
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); // 💥 throw
+  saveRowToSheet(file.getId(), file.getUrl()); // ไม่ถึงตรงนี้
+}
+```
+
+### ✓ Good — wrap `setSharing` ใน try/catch + degrade gracefully
+
+```javascript
+function uploadImageAndSave(callerUserId, base64, meta) {
+  try {
+    const file = folder.createFile(blob);
+
+    // ลอง public share — fail ก็ไม่เป็นไร ไฟล์ยังอยู่
+    let publicUrl = '';
+    try {
+      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      publicUrl = 'https://lh3.googleusercontent.com/d/' + file.getId() + '=w400';
+    } catch (sharingErr) {
+      Logger.log('[upload] setSharing blocked by domain policy: ' + sharingErr.message);
+      // fallback: คืน file ID แล้วให้ client ดึงผ่าน base64 RPC แทน
+    }
+
+    saveRowToSheet(file.getId(), publicUrl);
+    return { ok: true, fileId: file.getId(), publicUrl: publicUrl };
+  } catch (err) {
+    return { ok: false, message: err.message };
+  }
+}
+```
+
+### ✓ Better — รู้ตั้งแต่ deploy ว่า domain block public sharing → ออกแบบไม่ใช้เลย
+
+ถ้ารู้ว่า target user ทั้งหมดอยู่ใน domain เดียวกัน (โรงเรียน, บริษัท) → **ห้ามใช้ `ANYONE_WITH_LINK` ตั้งแต่แรก** ใช้ base64 dataURL ผ่าน RPC (Rule #3) หรือ share ภายใน domain เท่านั้น:
+
+```javascript
+// Share เฉพาะคนใน domain — policy อนุญาตปกติ
+file.setSharing(DriveApp.Access.DOMAIN_WITH_LINK, DriveApp.Permission.VIEW);
+```
+
+หรือ share เป็น user-specific:
+
+```javascript
+file.addViewer('supervisor@school.ac.th');
+```
+
+### Decision tree
+
+```
+ต้องโชว์รูปในเว็บแอป?
+├── ใช่ + user ทุกคนอยู่ใน domain เดียวกัน
+│   └── ใช้ base64 dataURL ผ่าน RPC (Rule #3) — ไม่ต้อง share เลย
+├── ใช่ + user หลายโดเมน / external + รูปไม่ sensitive
+│   └── ลอง ANYONE_WITH_LINK + try/catch fallback
+├── ใช่ + รูป sensitive
+│   └── base64 dataURL + ตรวจสิทธิ์ทุก RPC call
+└── ไม่ — แค่เก็บใน Drive
+    └── createFile แล้วจบ — ไม่ต้อง setSharing
+```
+
+### วิธี detect policy ก่อน
+ไม่มี GAS API ที่ query policy ตรง ๆ — practical:
+1. **Deploy แล้วลองด้วย test account ใน domain target** ดูว่า `setSharing` throw ไหม
+2. **เก็บ flag ใน Config sheet** `ALLOW_PUBLIC_SHARING = true/false` — ให้ admin toggle ตามจริง
+3. **try/catch + memoize** — ลองครั้งแรก fail ก็จำไว้ใน CacheService ทั้งวัน ไม่ต้องลองซ้ำ
+
+```javascript
+function canPublicShare_() {
+  const cache = CacheService.getScriptCache();
+  const cached = cache.get('can_public_share');
+  if (cached !== null) return cached === '1';
+
+  try {
+    // ทดสอบกับไฟล์ dummy
+    const testFile = DriveApp.createFile('___test_share___', '');
+    testFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    testFile.setTrashed(true);
+    cache.put('can_public_share', '1', 86400); // 24 hr
+    return true;
+  } catch (e) {
+    cache.put('can_public_share', '0', 86400);
+    return false;
+  }
+}
+```
 
 ---
 
