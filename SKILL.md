@@ -36,6 +36,7 @@ description: Google Apps Script best practices for production web apps and autom
 | เพิ่มตาราง/คอลัมน์ใหม่ในระบบที่ ship แล้ว | `rules/schema-migrations.md` |
 | handle error + user-facing message | `rules/error-handling.md` |
 | debug, log, execution history | `rules/testing-debugging.md` |
+| log boundary RPC client+server, mask sensitive, debug ฝั่ง user | `rules/logging-boundaries.md` |
 
 ## หลักการรวม
 
