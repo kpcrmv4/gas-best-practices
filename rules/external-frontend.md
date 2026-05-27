@@ -305,6 +305,92 @@ const res = await fetch(GAS_URL, {
 
 ---
 
+## Rule #8.1: multi-account login — append `/u/0/` หรือ `?authuser=` กัน "ไม่สามารถเปิดไฟล์ได้ในเวลานี้"
+
+**Bug จริง:** user ที่ login Google หลายบัญชีในเครื่องเดียว (เช่น ส่วนตัว + งาน + โรงเรียน) เปิดลิงก์ GAS แล้วเจอ:
+
+> **ขออภัย ไม่สามารถเปิดไฟล์ได้ในเวลานี้**
+> โปรดตรวจสอบที่อยู่และลองอีกครั้ง
+
+**สาเหตุ:** Google ไม่รู้ว่าควรใช้บัญชีไหนเปิด — บัญชีแรก (default `/u/0/`) อาจไม่ใช่บัญชีที่มีสิทธิ์เข้า web app (ถ้า deploy `Anyone within domain` หรือ `Anyone with Google account`)
+
+### ✓ Fix สำหรับ user
+
+ต่อท้าย URL `/exec`:
+
+| รูปแบบ | ใช้เมื่อ |
+|---|---|
+| `.../exec/usp=sharing` | ทั่วไป — Google เลือกบัญชีให้ |
+| `.../exec?authuser=0` | บังคับใช้บัญชี default (login ตัวแรก) |
+| `.../exec?authuser=1` | บัญชีที่ 2 |
+| `.../exec?authuser=user@gmail.com` | ระบุ email ตรง ๆ — ชัดเจนสุด |
+| `https://script.google.com/u/1/macros/s/<id>/exec` | inline `/u/<index>/` ในพาธ |
+
+**แนะนำ:** ส่งลิงก์แบบ `?authuser=<email>` ให้ user ที่จดทะเบียนไว้
+
+```
+https://script.google.com/macros/s/AKfycb.../exec?authuser=teacher@school.ac.th
+```
+
+### ✓ Fix สำหรับ developer — generate ลิงก์ที่ embed authuser
+
+ถ้าระบบของคุณรู้ email ของ user (login แล้ว) — สร้างลิงก์ที่แนบ authuser ทุกครั้งที่ส่ง:
+
+```javascript
+// Server (GAS)
+function getDeployedUrl_(forUserEmail) {
+  const base = ScriptApp.getService().getUrl(); // .../exec
+  if (forUserEmail) {
+    return base + '?authuser=' + encodeURIComponent(forUserEmail);
+  }
+  return base;
+}
+
+// ใช้ใน notification ที่ส่งให้ user
+function sendApprovalNotification_(email, recordId) {
+  const url = getDeployedUrl_(email) + '&action=approve&id=' + recordId;
+  MailApp.sendEmail({
+    to: email,
+    subject: 'มีคำขอรออนุมัติ',
+    htmlBody: `<a href="${url}">เปิดเพื่ออนุมัติ</a>`,
+  });
+}
+```
+
+### ✓ Fix สำหรับ user ที่เจอ error แล้ว
+
+ถ้าตอนนี้ click ลิงก์ใน LINE/email แล้วเจอ error:
+
+1. **วิธีง่ายสุด** — copy URL → เปิดหน้าใหม่ในโหมด Incognito → login บัญชีเป้าหมาย → paste
+2. **บนเดียวกัน** — `chrome://settings/people` หรือ icon profile บนขวา → switch ไปบัญชีเป้าหมายเป็น default → retry
+3. **เพิ่ม `/u/<index>/`** ใน URL — index 0 = บัญชีแรกที่ login, 1 = ที่สอง, ...
+4. **ระบุ `?authuser=<email>`** ต่อท้าย URL — ชัวร์สุดเพราะระบุ email ตรง
+
+### Page UX hint — แสดงคำแนะนำตอน user เจอ error
+
+ถ้า user copy URL ผิดมาเปิด → server ส่ง HTML guide แทน blank error:
+
+```html
+<!-- error-account.html (GitHub Pages frontend) -->
+<div>
+  <h2>ไม่สามารถเปิดได้</h2>
+  <p>ลองวิธีต่อไปนี้:</p>
+  <ol>
+    <li>กดที่ <a id="link-authuser">ลิงก์นี้</a> (จะแนบบัญชีอัตโนมัติ)</li>
+    <li>หรือเปิด <kbd>Ctrl+Shift+N</kbd> (Incognito) แล้วเปิด URL ใหม่</li>
+    <li>หรือสลับเป็นบัญชี <em>your@school.ac.th</em> ในมุมขวาบนของ Google</li>
+  </ol>
+</div>
+<script>
+  const userEmail = prompt('Email ที่ใช้งานในระบบ:');
+  if (userEmail) {
+    document.getElementById('link-authuser').href = APP_GAS_URL + '?authuser=' + encodeURIComponent(userEmail);
+  }
+</script>
+```
+
+---
+
 ## Rule #9: GitHub Pages setup
 
 ```
