@@ -26,6 +26,7 @@ description: Google Apps Script best practices for production web apps and autom
 | Read/write Sheet, batch update | `rules/spreadsheet-ops.md` |
 | ทำ web app ที่เรียกผ่าน `google.script.run` | `rules/web-app-rpc.md` |
 | HTML head, viewport, partial include, template syntax | `rules/htmlservice-frontend.md` |
+| ใช้กล้อง/PWA/SW — frontend แยกไป GitHub Pages | `rules/external-frontend.md` |
 | สร้าง PDF จาก template | `rules/pdf-generation.md` |
 | จัดการ folder/file ใน Drive | `rules/drive-ops.md` |
 | operation ที่ user หลายคนอาจชนกัน | `rules/lock-service.md` |
