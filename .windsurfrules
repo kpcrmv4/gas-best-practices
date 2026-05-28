@@ -1,0 +1,44 @@
+# gas-best-practices — Cursor rules
+
+When working with Google Apps Script code (`.gs` files, `appsscript.json`, `.clasp.json`, or
+mentions of GAS/clasp), follow the rules in `rules/` of this repo.
+
+Trigger detection — apply when:
+- Files with `.gs` extension exist
+- `appsscript.json` or `.clasp.json` in project root
+- Code references `SpreadsheetApp`, `DriveApp`, `HtmlService`, `UrlFetchApp`, `LockService`, etc.
+- HTML files use `google.script.run`
+
+## Core principles
+
+1. Every server function returns a `{ok, message/data}` envelope — never throw to client
+2. Read sheets once with `getDataRange().getValues()` but write per-cell if merged cells possible
+3. Lazy resource creation (folders, sheets, columns) on startup via Config sheet
+4. Cache user lookups via `CacheService.getScriptCache()` with explicit invalidation
+5. `LockService.getScriptLock()` around concurrent mutations + try/finally release
+6. Thai user-facing messages, English Logger.log
+7. Log every RPC boundary (console.log client + Logger.log server)
+8. Force text format for leading-zero numeric fields (phone, ID, postal code)
+9. Recompute critical values server-side — never trust client
+
+## Topic-to-file mapping
+
+- Sheet ops (merged cells, batch, %): `rules/spreadsheet-ops.md`
+- Web app RPC: `rules/web-app-rpc.md`
+- HTML service / viewport: `rules/htmlservice-frontend.md`
+- External frontend + camera: `rules/external-frontend.md`
+- PDF generation: `rules/pdf-generation.md`
+- Drive folders / signature preview: `rules/drive-ops.md`
+- Concurrency: `rules/lock-service.md`
+- Caching: `rules/cache-service.md`
+- Dynamic year/month dropdowns: `rules/dynamic-dropdowns.md`
+- Security / role check: `rules/security.md`
+- Schema migrations: `rules/schema-migrations.md`
+- Error handling: `rules/error-handling.md`
+- Sheet menus: `rules/onopen-menu.md`
+- Logging boundaries: `rules/logging-boundaries.md`
+- Debug / testing: `rules/testing-debugging.md`
+- Project structure: `rules/project-structure.md`
+
+When suggesting code, reference rule numbers (e.g., "per spreadsheet-ops Rule #2").
+Show ✗ Bad / ✓ Good patterns when correcting common mistakes.

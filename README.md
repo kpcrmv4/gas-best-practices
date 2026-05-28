@@ -177,6 +177,88 @@ Remove-Item -Recurse -Force "$HOME\.claude\skills\gas-best-practices"
 
 Claude ควรอ้างถึง pattern จาก skill นี้ (เช่น แนะนำให้ใช้ `Result envelope`, `LockService`, `Logger.log` boundary)
 
+---
+
+## 🤖 ใช้กับ AI tool อื่น (ไม่ใช่แค่ Claude Code)
+
+Skill นี้ออกแบบให้ทำงานกับ Claude Code โดยตรง — แต่ **เนื้อหา rule ใน `rules/` เป็น markdown ธรรมดา** ใช้กับ AI tool ตัวอื่นได้ทั้งหมด
+
+### Cursor / Windsurf / Cline
+
+Clone repo เข้าไปในโปรเจ็ค หรือ copy ไฟล์ `.cursorrules` / `.windsurfrules` / `.clinerules` จาก repo นี้ไปวางใน root ของโปรเจ็คคุณ:
+
+```bash
+curl -O https://raw.githubusercontent.com/kpcrmv4/gas-best-practices/main/.cursorrules
+```
+
+แล้ว AI ของ tool นั้นจะอ่านอัตโนมัติเวลาคุณเปิดโปรเจ็ค (ต้อง clone repo ไว้ใกล้ ๆ เพื่อให้ AI access `rules/*.md` ได้)
+
+### ChatGPT / Claude.ai web / Gemini
+
+ใช้ไฟล์ **`PROMPT.md`** ที่รวมทุก rule ในไฟล์เดียว:
+
+1. ดาวน์โหลด: <https://raw.githubusercontent.com/kpcrmv4/gas-best-practices/main/PROMPT.md>
+2. Copy เนื้อหาทั้งหมด
+3. วางใน:
+   - **ChatGPT Custom GPT** → Instructions field
+   - **ChatGPT Project** → Project knowledge
+   - **Claude.ai Project** → Project knowledge / custom instructions
+   - **Gemini Gem** → Instructions
+
+ขนาดประมาณ 4,000 บรรทัด (~95KB) — พอดีกับ context window ของ GPT-4o, Claude 3.5+, Gemini 1.5+
+
+### Gemini Code Assist / OpenCode
+
+อ่านไฟล์ **`AGENTS.md`** อัตโนมัติ — clone repo เข้าโปรเจ็คก็ใช้ได้
+
+### GitHub Copilot
+
+Copilot ไม่อ่าน external rule files แต่อ่าน `.github/copilot-instructions.md` ได้:
+
+```bash
+mkdir -p .github
+curl -o .github/copilot-instructions.md \
+  https://raw.githubusercontent.com/kpcrmv4/gas-best-practices/main/AGENTS.md
+```
+
+### Aider
+
+```bash
+aider --read /path/to/gas-best-practices/AGENTS.md \
+      --read /path/to/gas-best-practices/rules/spreadsheet-ops.md
+```
+
+### Continue.dev
+
+ใน `.continue/config.json`:
+
+```json
+{
+  "contextProviders": [
+    {
+      "name": "file",
+      "params": {
+        "filePath": "/path/to/gas-best-practices/PROMPT.md"
+      }
+    }
+  ]
+}
+```
+
+### สรุปไฟล์ที่ใช้กับแต่ละ AI
+
+| AI tool | ไฟล์ที่ใช้ |
+|---|---|
+| **Claude Code** (recommended) | `SKILL.md` (auto-loaded จาก `~/.claude/skills/`) |
+| Cursor | `.cursorrules` |
+| Windsurf | `.windsurfrules` |
+| Cline | `.clinerules` |
+| Gemini Code Assist / OpenCode | `AGENTS.md` |
+| GitHub Copilot | copy `AGENTS.md` → `.github/copilot-instructions.md` |
+| Aider | `--read AGENTS.md --read rules/*.md` |
+| Continue.dev | `PROMPT.md` ใน config |
+| ChatGPT / Claude.ai web / Gemini chat | `PROMPT.md` paste ใน custom instructions/project knowledge |
+
 ## เนื้อหา
 
 | Rule file | สิ่งที่ครอบคลุม |
