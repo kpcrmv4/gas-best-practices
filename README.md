@@ -1,30 +1,144 @@
 # gas-best-practices
 
-> Claude Code skill รวมแนวปฏิบัติที่ดีสำหรับ Google Apps Script — distilled จาก production bug จริง
+> Claude Code skill — Google Apps Script best practices distilled from real production bugs.
+>
+> Claude Code skill รวมแนวปฏิบัติที่ดีสำหรับ Google Apps Script — สังเคราะห์จาก bug จริงใน production
 
-ใช้กับ Claude Code เพื่อให้ Claude แนะนำ/แก้ไขโค้ด GAS ตาม pattern ที่ผ่านการทดสอบในระบบจริง
+Use with [Claude Code](https://claude.com/claude-code) so that Claude follows production-tested patterns when writing or reviewing GAS code.
 
-## Quick install
+ใช้กับ [Claude Code](https://claude.com/claude-code) เพื่อให้ Claude แนะนำ/แก้ไขโค้ด GAS ตาม pattern ที่ผ่านการใช้งานจริงในระบบ production
 
-### Mac / Linux
+---
+
+## 📦 Installation / วิธีติดตั้ง
+
+### English
+
+#### Option 1 — Mac / Linux (one-liner)
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/kpcrmv4/gas-best-practices/main/install.sh | bash
 ```
 
-### Windows (PowerShell)
+#### Option 2 — Windows PowerShell (one-liner)
 
 ```powershell
 iwr -useb https://raw.githubusercontent.com/kpcrmv4/gas-best-practices/main/install.ps1 | iex
 ```
 
-### Manual
+#### Option 3 — Manual git clone (any OS)
 
 ```bash
 git clone https://github.com/kpcrmv4/gas-best-practices ~/.claude/skills/gas-best-practices
 ```
 
-restart Claude Code → skill จะ trigger อัตโนมัติเมื่อเปิดโปรเจ็ค GAS
+For Windows without `~`:
+
+```powershell
+git clone https://github.com/kpcrmv4/gas-best-practices "$HOME\.claude\skills\gas-best-practices"
+```
+
+#### Verify installation
+
+```bash
+ls ~/.claude/skills/gas-best-practices
+# should show: SKILL.md, rules/, README.md, ...
+```
+
+Then **restart Claude Code**. The skill will auto-trigger when:
+- Your project contains `.clasp.json` or `appsscript.json`
+- You edit `.gs` or `.js` files in a clasp project
+- You mention "Google Apps Script", "GAS", or "clasp" in a prompt
+
+#### Update to latest
+
+Re-run the install command, or:
+
+```bash
+cd ~/.claude/skills/gas-best-practices && git pull
+```
+
+#### Uninstall
+
+```bash
+rm -rf ~/.claude/skills/gas-best-practices
+```
+
+---
+
+### ภาษาไทย
+
+#### วิธีที่ 1 — Mac / Linux (คำสั่งเดียวจบ)
+
+เปิด Terminal แล้ววาง:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/kpcrmv4/gas-best-practices/main/install.sh | bash
+```
+
+#### วิธีที่ 2 — Windows PowerShell (คำสั่งเดียวจบ)
+
+เปิด PowerShell (กด `Win + X` → Terminal/PowerShell) แล้ววาง:
+
+```powershell
+iwr -useb https://raw.githubusercontent.com/kpcrmv4/gas-best-practices/main/install.ps1 | iex
+```
+
+#### วิธีที่ 3 — Manual ด้วย git clone (ทุก OS)
+
+```bash
+git clone https://github.com/kpcrmv4/gas-best-practices ~/.claude/skills/gas-best-practices
+```
+
+Windows ถ้าใช้ `~` ไม่ได้:
+
+```powershell
+git clone https://github.com/kpcrmv4/gas-best-practices "$HOME\.claude\skills\gas-best-practices"
+```
+
+#### ตรวจสอบว่าติดตั้งสำเร็จ
+
+```bash
+ls ~/.claude/skills/gas-best-practices
+# ต้องเห็น: SKILL.md, rules/, README.md, ...
+```
+
+จากนั้น **ปิดและเปิด Claude Code ใหม่** เพื่อโหลด skill
+
+Skill จะถูกเรียกใช้อัตโนมัติเมื่อ:
+- โปรเจ็คที่เปิดอยู่มีไฟล์ `.clasp.json` หรือ `appsscript.json`
+- คุณกำลังแก้ไฟล์ `.gs` หรือ `.js` ในโปรเจ็ค clasp
+- คุณพิมพ์ prompt ที่มีคำว่า "Google Apps Script", "GAS", หรือ "clasp"
+
+#### อัพเดตเป็นเวอร์ชันล่าสุด
+
+รันคำสั่ง install ซ้ำ หรือ:
+
+```bash
+cd ~/.claude/skills/gas-best-practices && git pull
+```
+
+#### ถอนการติดตั้ง
+
+```bash
+rm -rf ~/.claude/skills/gas-best-practices
+```
+
+Windows PowerShell:
+
+```powershell
+Remove-Item -Recurse -Force "$HOME\.claude\skills\gas-best-practices"
+```
+
+---
+
+## 🔍 ทดสอบว่าใช้งานได้
+
+หลัง install เสร็จ ลองเปิดโปรเจ็ค GAS แล้วถาม Claude:
+
+> "ช่วยตรวจ Code.gs หน่อย"
+
+Claude ควรอ้างถึง pattern จาก skill นี้ (เช่น แนะนำให้ใช้ `Result envelope`, `LockService`, `Logger.log` boundary)
 
 ## เนื้อหา
 
