@@ -9,19 +9,19 @@
 ### Mac / Linux
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/<YOUR_USER>/gas-best-practices/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/kpcrmv4/gas-best-practices/main/install.sh | bash
 ```
 
 ### Windows (PowerShell)
 
 ```powershell
-iwr -useb https://raw.githubusercontent.com/<YOUR_USER>/gas-best-practices/main/install.ps1 | iex
+iwr -useb https://raw.githubusercontent.com/kpcrmv4/gas-best-practices/main/install.ps1 | iex
 ```
 
 ### Manual
 
 ```bash
-git clone https://github.com/<YOUR_USER>/gas-best-practices ~/.claude/skills/gas-best-practices
+git clone https://github.com/kpcrmv4/gas-best-practices ~/.claude/skills/gas-best-practices
 ```
 
 restart Claude Code → skill จะ trigger อัตโนมัติเมื่อเปิดโปรเจ็ค GAS

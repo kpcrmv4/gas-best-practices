@@ -2,7 +2,7 @@
 # Install gas-best-practices skill for Claude Code
 set -e
 
-REPO="${GAS_BP_REPO:-https://github.com/YOUR_USER/gas-best-practices}"
+REPO="${GAS_BP_REPO:-https://github.com/kpcrmv4/gas-best-practices}"
 DEST="${HOME}/.claude/skills/gas-best-practices"
 
 echo "Installing gas-best-practices skill..."

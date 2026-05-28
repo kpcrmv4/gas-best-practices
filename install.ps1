@@ -1,7 +1,7 @@
 # Install gas-best-practices skill for Claude Code (Windows PowerShell)
 $ErrorActionPreference = "Stop"
 
-$Repo = if ($env:GAS_BP_REPO) { $env:GAS_BP_REPO } else { "https://github.com/YOUR_USER/gas-best-practices" }
+$Repo = if ($env:GAS_BP_REPO) { $env:GAS_BP_REPO } else { "https://github.com/kpcrmv4/gas-best-practices" }
 $Dest = Join-Path $HOME ".claude\skills\gas-best-practices"
 
 Write-Host "Installing gas-best-practices skill..."
