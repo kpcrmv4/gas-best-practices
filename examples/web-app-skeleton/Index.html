@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <!-- viewport ต้องอยู่ใน .html — rules/htmlservice-frontend.md Rule #1 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ตัวอย่างระบบบันทึกข้อมูล</title>
+  <style>
+    body { font-family: sans-serif; max-width: 480px; margin: 2rem auto; padding: 0 1rem; }
+    input, button { font-size: 1rem; padding: .5rem; margin: .25rem 0; width: 100%; box-sizing: border-box; }
+    .error { color: #c00; }
+    .hidden { display: none; }
+    li { margin: .25rem 0; }
+  </style>
+</head>
+<body>
+  <h1>ระบบบันทึกข้อมูล <small id="version"></small></h1>
+
+  <!-- Login -->
+  <div id="loginView">
+    <input id="username" placeholder="ชื่อผู้ใช้" autocomplete="username">
+    <input id="password" type="password" placeholder="รหัสผ่าน" autocomplete="current-password">
+    <button onclick="doLogin()">เข้าสู่ระบบ</button>
+    <p id="loginError" class="error"></p>
+  </div>
+
+  <!-- App -->
+  <div id="appView" class="hidden">
+    <p>สวัสดี <b id="displayName"></b></p>
+    <input id="title" placeholder="ชื่อรายการ">
+    <input id="phone" placeholder="เบอร์โทร (เช่น 0812345678)">
+    <button onclick="doSave()">บันทึก</button>
+    <p id="saveMsg"></p>
+    <ul id="recordList"></ul>
+  </div>
+
+  <script>
+    let sessionToken = null;
+
+    // wrapper เดียวใช้ทุก RPC — log boundary ฝั่ง client (rules/logging-boundaries.md)
+    function rpc(fnName, ...args) {
+      console.log('[rpc→]', fnName, args);
+      return new Promise((resolve, reject) => {
+        google.script.run
+          .withSuccessHandler(res => {
+            console.log('[rpc←]', fnName, res);
+            if (res && res.ok === false) reject(new Error(res.message || 'เกิดข้อผิดพลาด'));
+            else resolve(res);
+          })
+          .withFailureHandler(err => {
+            console.error('[rpc✗]', fnName, err);
+            reject(new Error('เชื่อมต่อไม่สำเร็จ กรุณาลองใหม่'));
+          })[fnName](...args);
+      });
+    }
+
+    async function doLogin() {
+      document.getElementById('loginError').textContent = '';
+      try {
+        const res = await rpc('login',
+          document.getElementById('username').value.trim(),
+          document.getElementById('password').value);
+        sessionToken = res.token;
+        document.getElementById('displayName').textContent = res.displayName;
+        document.getElementById('loginView').classList.add('hidden');
+        document.getElementById('appView').classList.remove('hidden');
+        loadRecords();
+      } catch (err) {
+        document.getElementById('loginError').textContent = err.message;
+      }
+    }
+
+    async function doSave() {
+      const msg = document.getElementById('saveMsg');
+      msg.textContent = 'กำลังบันทึก...';
+      try {
+        const res = await rpc('saveRecord', sessionToken, {
+          title: document.getElementById('title').value,
+          phone: document.getElementById('phone').value,
+        });
+        msg.textContent = res.message;
+        document.getElementById('title').value = '';
+        document.getElementById('phone').value = '';
+        loadRecords();
+      } catch (err) {
+        msg.textContent = err.message;
+        msg.className = 'error';
+      }
+    }
+
+    async function loadRecords() {
+      try {
+        const res = await rpc('listRecords', sessionToken);
+        const ul = document.getElementById('recordList');
+        ul.innerHTML = '';
+        res.data.forEach(r => {
+          const li = document.createElement('li');
+          // CreatedAt เป็น ISO string — format ฝั่ง client ตาม locale
+          li.textContent = r.Title + ' — ' + new Date(r.CreatedAt).toLocaleString('th-TH');
+          ul.appendChild(li); // textContent ปลอดภัยจาก XSS — ห้ามใช้ innerHTML กับข้อมูล user
+        });
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  </script>
+</body>
+</html>

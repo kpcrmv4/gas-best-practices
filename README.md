@@ -205,7 +205,9 @@ curl -O https://raw.githubusercontent.com/kpcrmv4/gas-best-practices/main/.curso
    - **Claude.ai Project** → Project knowledge / custom instructions
    - **Gemini Gem** → Instructions
 
-ขนาดประมาณ 4,000 บรรทัด (~95KB) — พอดีกับ context window ของ GPT-4o, Claude 3.5+, Gemini 1.5+
+ขนาดประมาณ 4,700 บรรทัด (~110KB) — พอดีกับ context window ของโมเดลหลักทุกตัวในปัจจุบัน
+
+> `PROMPT.md` เป็นไฟล์ generate อัตโนมัติจาก `build.sh` — แก้เนื้อหาที่ `rules/*.md` แล้วรัน `./build.sh` เท่านั้น
 
 ### Gemini Code Assist / OpenCode
 
@@ -279,6 +281,12 @@ aider --read /path/to/gas-best-practices/AGENTS.md \
 | [onopen-menu.md](rules/onopen-menu.md) | custom menu, separators, toast vs alert, sub-menu |
 | [testing-debugging.md](rules/testing-debugging.md) | Logger.log pattern, e2e via doPost, timing, quota |
 | [logging-boundaries.md](rules/logging-boundaries.md) | log ที่ RPC boundary (client+server), mask sensitive, copy-debug-info UX, version stamp |
+| [triggers.md](rules/triggers.md) | time-driven/installable triggers, กัน trigger ซ้ำ, onFormSubmit (namedValues), สิทธิ์ trigger |
+| [urlfetch-external-api.md](rules/urlfetch-external-api.md) | muteHttpExceptions, retry+backoff, fetchAll, LINE Messaging API, quota |
+| [deployment-versioning.md](rules/deployment-versioning.md) | /dev vs /exec, clasp deploy -i, rollback, .claspignore, version stamp |
+| [long-running-jobs.md](rules/long-running-jobs.md) | ทะลุ 6-minute limit — checkpoint + continuation trigger, submit+poll |
+| [email-notifications.md](rules/email-notifications.md) | MailApp vs GmailApp, quota email, throttled error alert |
+| [properties-service.md](rules/properties-service.md) | Script/User/Document properties, เกณฑ์เลือก vs Config sheet |
 
 ## Bugs จริงที่กฎเหล่านี้ป้องกัน
 
@@ -296,27 +304,35 @@ aider --read /path/to/gas-best-practices/AGENTS.md \
 - 🐛 **`getUserMedia` ใช้ไม่ได้ในเว็บแอป** เพราะ GAS iframe block — ต้องย้าย frontend ไป GitHub Pages → [external-frontend.md](rules/external-frontend.md)
 - 🐛 **fetch GAS แล้ว CORS error** เพราะส่ง `Content-Type: application/json` (trigger preflight) — ต้องใช้ `text/plain` → [external-frontend.md](rules/external-frontend.md) Rule #1
 - 🐛 **"ขออภัย ไม่สามารถเปิดไฟล์ได้ในเวลานี้"** เวลามี Google หลายบัญชีในเครื่อง — แก้ด้วย `?authuser=` หรือ `/u/<n>/` → [external-frontend.md](rules/external-frontend.md) Rule #8.1
+- 🐛 **Report รายวันส่งซ้ำ 3 ฉบับ** เพราะรัน setup หลายรอบ → trigger ซ้อน 3 ตัว → [triggers.md](rules/triggers.md) Rule #1
+- 🐛 **`clasp push` แล้วเว็บ `/exec` ยังเป็นโค้ดเก่า** เพราะ deployment ตรึง version — ต้อง `clasp deploy -i` → [deployment-versioning.md](rules/deployment-versioning.md) Rule #1-#2
+- 🐛 **งาน batch ตายกลางคันที่ 6 นาที ข้อมูลค้างครึ่งเดียว** เพราะไม่มี checkpoint + continuation trigger → [long-running-jobs.md](rules/long-running-jobs.md) Rule #2
 
 ## โครงสร้าง repo
 
 ```
 gas-best-practices/
 ├── SKILL.md             # entry point ที่ Claude อ่าน (มี frontmatter)
+├── AGENTS.md            # entry point สำหรับ AI tool อื่น
 ├── README.md            # หน้าแรก GitHub
+├── CHANGELOG.md         # ประวัติ version
 ├── LICENSE              # MIT
 ├── install.sh           # one-liner setup
 ├── install.ps1
-├── rules/               # กฎแยกตามหัวข้อ — แต่ละไฟล์ standalone
+├── build.sh             # generate PROMPT.md + sync .clinerules/.windsurfrules
+├── rules/               # กฎแยกตามหัวข้อ — แต่ละไฟล์ standalone (22 ไฟล์)
 │   ├── project-structure.md
 │   ├── spreadsheet-ops.md
 │   └── ...
+├── evals/               # test prompts สำหรับวัดผล skill
+│   └── evals.json
 └── examples/            # โค้ดตัวอย่างที่ใช้ rule จริง
-    └── README.md
+    └── web-app-skeleton/   # login + RPC + Lock ครบใน 5 ไฟล์
 ```
 
 ## Contributing
 
-PR ยินดีรับ! แต่ละ rule ทำตามแม่แบบ:
+PR ยินดีรับ! หลังแก้ `rules/*.md` หรือ `.cursorrules` ให้รัน `./build.sh` เพื่อ regenerate `PROMPT.md` / `.clinerules` / `.windsurfrules` ก่อน commit (CI จะเช็คว่า sync กัน) — แต่ละ rule ทำตามแม่แบบ:
 
 ```markdown
 # <หมวด>

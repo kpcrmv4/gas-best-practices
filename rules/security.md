@@ -7,10 +7,16 @@
 ### ✓ Good — guard ทุก function
 
 ```javascript
-function deleteRecord(callerUserId, rowIndex) {
+function deleteRecord(callerUserId, recordId) {
+  // อ้าง record ด้วย RecordID ไม่ใช่ row number จาก client — row เลื่อนได้ตลอดเวลา
+  // (มีคนลบแถวอื่นก่อนหน้า → row number เดิมชี้ record คนละตัว = ลบผิดแถว)
+  const lock = LockService.getScriptLock();
   try {
+    if (!lock.tryLock(10000)) throw new Error('ระบบกำลังประมวลผล กรุณาลองใหม่');
     const caller = requireUser_(callerUserId);
-    const record = readRecord_(rowIndex);
+    if (!recordId || typeof recordId !== 'string') throw new Error('ไม่พบ record');
+
+    const record = readSheet_(sheet).find(r => String(r.RecordID) === recordId);
     if (!record) throw new Error('ไม่พบ record');
 
     // teacher ลบได้แค่ของตัวเอง
@@ -19,10 +25,12 @@ function deleteRecord(callerUserId, rowIndex) {
     }
     // admin/supervisor ลบได้หมด
 
-    sheet.deleteRow(Number(rowIndex));
+    sheet.deleteRow(record.__rowIndex); // row index จากการอ่านสด ภายใต้ lock
     return { ok: true };
   } catch (err) {
     return { ok: false, message: err.message };
+  } finally {
+    lock.releaseLock();
   }
 }
 

@@ -9,8 +9,9 @@ Apply these rules when you detect any of:
 - Files with `.gs` extension
 - `appsscript.json` in project root
 - `.clasp.json` in project root
-- User mentions "Google Apps Script", "GAS", or "clasp"
+- User mentions "Google Apps Script", "GAS", or "clasp" (or Thai: "แอปสคริปต์", "สคริปต์ชีต")
 - Code uses `SpreadsheetApp`, `DriveApp`, `HtmlService`, `UrlFetchApp`, or other GAS services
+- `doGet` / `doPost` / `onEdit` / `onFormSubmit` handlers, or time-driven triggers
 - `google.script.run` calls in HTML files
 
 ## How to use
@@ -35,15 +36,21 @@ When working on GAS code, consult `rules/<topic>.md` based on the task:
 | Custom Sheet menus | `rules/onopen-menu.md` |
 | Debug, log, execution history | `rules/testing-debugging.md` |
 | Log at RPC boundaries (client + server) | `rules/logging-boundaries.md` |
+| Time-driven / onEdit / onFormSubmit triggers | `rules/triggers.md` |
+| External APIs, LINE Messaging API, webhooks | `rules/urlfetch-external-api.md` |
+| Deploy not updating, /dev vs /exec, rollback, .claspignore | `rules/deployment-versioning.md` |
+| Batch jobs beyond the 6-minute limit | `rules/long-running-jobs.md` |
+| Email notifications, quotas, admin error alerts | `rules/email-notifications.md` |
+| API keys / config — Properties vs Config sheet | `rules/properties-service.md` |
 
 ## Core principles (cross-cutting)
 
 1. **Every server function callable from client returns a `Result<T>` envelope** — never throw to client
-2. **Read sheets once with `getDataRange().getValues()`** — but **write cell-by-cell** if the sheet may have merged cells
+2. **Read sheets once with `getDataRange().getValues()`** — batch-write when no merged cells; write cell-by-cell only in merged zones
 3. **Lazy resource creation** — folder IDs, sheets, columns auto-create on startup, store in Config sheet
 4. **Cache user lookups + computed results** via `CacheService.getScriptCache()` with explicit invalidation
 5. **Wrap concurrent mutations in `LockService.getScriptLock()`** with `try/finally { releaseLock() }`
-6. **Store folder IDs in Config sheet** — not in script properties — for easy admin override
+6. **Admin-editable values go in the Config sheet, secrets go in Script Properties** — never hardcoded
 7. **Thai user-facing error messages** + English `Logger.log` for developers
 8. **Log every RPC boundary** — `console.log` in client, `Logger.log` in server (entry + exit)
 9. **Force text format for numeric fields with leading zeros** — phone, ID card, postal code (`setNumberFormat('@')` + apostrophe prefix)

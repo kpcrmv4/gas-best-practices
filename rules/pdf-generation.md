@@ -2,6 +2,24 @@
 
 แนวทางสร้าง PDF จาก Google Sheet template — เทคนิคจริงที่ใช้ใน production
 
+**สารบัญ** (ไฟล์ยาว — ข้ามไป rule ที่เกี่ยวกับงานตรงหน้าได้เลย):
+
+| Rule | เรื่อง |
+|---|---|
+| #1 | placeholder pattern `{{KEY}}` ใน template sheet |
+| #2 | copy template → temp sheet → export → delete temp |
+| #3 | export PDF ผ่าน UrlFetch + OAuth token |
+| #4 | insertImage anchor = บนซ้ายเสมอ — คำนวณ offset เอง |
+| #5 | รักษาอัตราส่วนของรูป — ห้าม stretch |
+| #6 | ตัดขอบขาวของรูปก่อน upload (signature canvas) |
+| #7 | cache PDF — ลบไฟล์เดิมก่อนสร้างใหม่ |
+| #8 | business rule guard ก่อน generate |
+| #9 | Thai date formatting (พ.ศ.) — helper เดียวทุกที่ |
+| #10 | get-or-generate pattern แยก endpoint |
+| #11 | PDF export URL parameters — reference table |
+| #12 | folder structure — เก็บ PDF แยกตาม owner |
+| #13 | PDF filename — ใช้ RecordID ไม่ใช่ display name |
+
 ## Rule #1: ใช้ placeholder pattern `{{KEY}}` ใน template sheet
 
 **Why:** สามารถสร้าง template ผ่าน UI ของ Sheets (formatting, font, alignment) ได้สบาย ไม่ต้องเขียน layout ด้วย code

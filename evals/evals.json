@@ -1,0 +1,41 @@
+{
+  "skill_name": "gas-best-practices",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "เขียนฟังก์ชัน Google Apps Script สำหรับบันทึกข้อมูลสมาชิกใหม่ลง Google Sheet ชื่อ 'Members' มีฟิลด์ ชื่อ-นามสกุล, เบอร์โทร, รหัสไปรษณีย์, วันที่สมัคร",
+      "expected_output": "Code that forces text format for phone/postal code (setNumberFormat('@') or apostrophe prefix per spreadsheet-ops Rule #6.6), appends by header name not column index (Rule #3), stores timestamp as ISO string (Rule #6.4), and returns a {ok, ...} Result envelope with a Thai error message on failure.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "ช่วยเขียนโค้ด GAS อ่านข้อมูลนักเรียนประมาณ 500 แถวจาก sheet 'Students' แล้วส่งไปแสดงในเว็บแอปผ่าน google.script.run",
+      "expected_output": "Reads the sheet once with getDataRange().getValues() (no per-row getValue loop, spreadsheet-ops Rule #1), converts Date objects to ISO strings before returning (Rule #6.1 — google.script.run cannot serialize Date), and wraps the response in a Result envelope.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "ทำฟังก์ชันสร้าง PDF ใบรับรองจาก template sheet ที่มี placeholder {{NAME}} {{DATE}} — template มีหัวกระดาษที่ merge cells ไว้",
+      "expected_output": "Copies template to a temp sheet, replaces placeholders per-cell or batch-writes only unmerged zones (never setValues over merged cells, spreadsheet-ops Rule #2), wraps generation in LockService with try/finally release (lock-service), exports via UrlFetch with OAuth token, and deletes the temp sheet.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "อยากให้ระบบส่งอีเมลสรุปรายการที่ค้างอนุมัติให้ admin ทุกวันตอน 6 โมงเช้า ช่วยเขียนให้หน่อย",
+      "expected_output": "Creates a time-driven trigger idempotently (deletes existing triggers for the same handler first, triggers.md Rule #1), notes atHour is an hour-range not exact time and depends on appsscript.json timeZone, wraps the handler in try/catch with throttled admin error notification, and checks MailApp.getRemainingDailyQuota before sending.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "งง มาก ผม clasp push โค้ดใหม่ขึ้นไปแล้ว แต่เปิดหน้าเว็บ /exec แล้วยังเห็นของเก่าอยู่เลย ต้องทำยังไง",
+      "expected_output": "Explains that /exec serves the deployed version while clasp push only updates HEAD (/dev), and instructs to update the existing deployment with clasp deploy -i <deploymentId> (not a bare clasp deploy, which creates a new URL) per deployment-versioning Rules #1-#2.",
+      "files": []
+    },
+    {
+      "id": 6,
+      "prompt": "ช่วยทำระบบ login ด้วย username/password ให้เว็บแอป GAS ที่ deploy แบบ anyone anonymous",
+      "expected_output": "Hashes passwords with salt (never plain text, security Rule #3), issues a session token with expiry stored server-side instead of trusting a client-held userId (Rule #2), guards every RPC with requireSession_/requireRole_, and returns Result envelopes with Thai user-facing messages.",
+      "files": []
+    }
+  ]
+}
