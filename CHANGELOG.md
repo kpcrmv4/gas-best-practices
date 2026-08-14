@@ -28,6 +28,11 @@
 - Sync core principles ให้ตรงกัน 10 ข้อทุก entry point (SKILL.md / AGENTS.md / .cursorrules / .clinerules / .windsurfrules)
 - SKILL.md description — เพิ่ม trigger keywords ภาษาไทย + หัวข้อใหม่ (triggers, doGet/doPost, LINE, deployment)
 
-## v1.0.0 — 2026-08-13
+## v0.2.0 — 2026-05-28
 
-- เวอร์ชันแรก: 16 rule files, รองรับ Claude Code / Cursor / Windsurf / Cline / Copilot / ChatGPT / Gemini
+- ทำ skill เป็น portable: รองรับ Cursor / Windsurf / Cline / Copilot / ChatGPT / Gemini (`.cursorrules`, `AGENTS.md`, `PROMPT.md`)
+- เพิ่ม `check.sh` / `update.sh` สำหรับเช็คสถานะและอัพเดท
+
+## v0.1.0 — 2026-05-28
+
+- เวอร์ชันแรก: 16 rule files สำหรับ Claude Code + คู่มือติดตั้งสองภาษา
