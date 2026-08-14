@@ -1,5 +1,17 @@
 # Drive Operations
 
+**สารบัญ:**
+
+| Rule | เรื่อง |
+|---|---|
+| #1 | เก็บ folder ID ใน Config sheet |
+| #2 | lazy creation — สร้างโฟลเดอร์อัตโนมัติ |
+| #3 | รูป signature/avatar คืน client เป็น base64 dataURL |
+| #4, #4.1 | sharing ANYONE_WITH_LINK + กรณีโดน domain policy block |
+| #5 | ลบไฟล์เก่าก่อน upload ใหม่ |
+| #6 | validate dataURL ฝั่ง server |
+| #7 | folder ของ user เก็บแยก |
+
 ## Rule #1: เก็บ folder ID ใน Config sheet — ไม่ใช่ hardcode
 
 **Why:** ถ้า hardcode ใน script, redeploy ต้อง redeploy ใหม่ทุกครั้งที่ folder ย้าย — แก้ใน Config sheet ได้ทันที + คนใน wiki/admin sheet เห็นได้

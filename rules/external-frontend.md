@@ -1,5 +1,24 @@
 # External Frontend (GitHub Pages / Netlify / Vercel) + GAS Backend
 
+**สารบัญ** (ไฟล์ยาว — ข้ามไป rule ที่เกี่ยวกับงานตรงหน้าได้เลย):
+
+| Rule | เรื่อง |
+|---|---|
+| Context | ทำไมต้องแยก frontend ออกจาก GAS + architecture |
+| #1 | POST `text/plain` หลีกเลี่ยง CORS preflight |
+| #2 | deploy `Execute as: Me` + `Anyone (even anonymous)` |
+| #3 | ทุก request ส่ง auth token ใน payload |
+| #4 | camera capture pattern |
+| #5 | บีบรูปก่อนส่ง |
+| #6 | ห้ามใส่ secret ใน frontend code |
+| #7 | handle redirect ของ GAS URL |
+| #8, #8.1 | deploy URL format + multi-account fix (`?authuser=`) |
+| #9 | GitHub Pages setup |
+| #10 | PWA installable + offline cache |
+| #11 | error handling รวม CORS / network |
+| #12 | เมื่อไหร่ใช้ HtmlService vs external frontend |
+| #13 | log GAS-side string mismatch |
+
 ## Context: ทำไมต้องแยก frontend ออกจาก GAS
 
 GAS web app รันใน sandbox iframe ของ `*.googleusercontent.com` — Google จำกัด API หลายตัวที่ web ทั่วไปทำได้:

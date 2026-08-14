@@ -2,9 +2,12 @@
 
 โค้ดตัวอย่างที่ใช้ pattern ในกฎจริง — copy-paste แล้วปรับเป็น project ของคุณได้
 
+## Available
+
+- [x] [`web-app-skeleton/`](web-app-skeleton/) — single-page web app + login (hash + session token) + RPC Result envelope + LockService
+
 ## Planned examples
 
-- [ ] `web-app-skeleton/` — single-page web app + login + RPC pattern
 - [ ] `pdf-from-template/` — template + placeholders + signature
 - [ ] `idempotent-schema/` — ensureSchema + migration version
 

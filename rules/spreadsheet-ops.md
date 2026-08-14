@@ -1,5 +1,19 @@
 # Spreadsheet Operations
 
+**สารบัญ:**
+
+| Rule | เรื่อง |
+|---|---|
+| #1 | อ่าน Sheet ครั้งเดียว (bulk read) |
+| #2 | merged cells กับ `setValues()` — per-cell / batch เฉพาะโซนปลอดภัย |
+| #3 | append row ตาม header order |
+| #4 | column index lookup โดย header name |
+| #5 | `flush()` หลัง mutation |
+| #6 (.1–.5) | Date object — serialize, timezone, ISO string, parse พ.ศ. |
+| #6.6 | leading zero (เบอร์โทร/รหัส) — บังคับ text format |
+| #7 | คอลัมน์ % — เก็บเป็น string |
+| #8 | คำนวณซ้ำฝั่ง server — อย่าเชื่อ client |
+
 ## Rule #1: อ่าน Sheet ครั้งเดียวด้วย `getDataRange().getValues()`
 
 **Why:** ทุก `getValue()`/`getRange()` call คือ round-trip ไปยัง Google server — แค่ 1 sheet × 100 row × 10 col = 1,000 calls = หลุด quota timeout (6 min)
@@ -66,6 +80,29 @@ for (let r = 0; r < values.length; r++) {
         Logger.log('skip r=' + (r + 1) + ' c=' + (c + 1) + ': ' + e.message);
       }
     }
+  }
+}
+```
+
+**Trade-off:** per-cell write ช้า (1 round-trip/เซลล์) — ใช้ได้กับ template PDF ที่เปลี่ยนไม่กี่สิบเซลล์ แต่**ห้ามใช้กับตารางข้อมูลหลายพันเซลล์** (ชน 6-minute limit)
+
+### ✓ Better สำหรับ range ใหญ่ — เช็ค merged ranges ก่อน แล้ว batch write เฉพาะโซนที่ปลอดภัย
+
+```javascript
+function hasMergedCells_(range) {
+  return range.getMergedRanges().length > 0;
+}
+
+const range = sheet.getDataRange();
+if (!hasMergedCells_(range)) {
+  range.setValues(values);          // ไม่มี merge → batch write เร็วสุด
+} else {
+  // มี merge (มักเป็นแถว header บนสุดของ template) → เขียน batch เฉพาะส่วน data
+  const dataRange = sheet.getRange(headerRows + 1, 1, values.length - headerRows, values[0].length);
+  if (!hasMergedCells_(dataRange)) {
+    dataRange.setValues(values.slice(headerRows));
+  } else {
+    // merge กระจายทั่ว → ยอม per-cell เฉพาะเซลล์ที่เปลี่ยน (ตัวอย่างด้านบน)
   }
 }
 ```

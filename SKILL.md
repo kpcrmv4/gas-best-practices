@@ -1,6 +1,6 @@
 ---
 name: gas-best-practices
-description: Google Apps Script best practices for production web apps and automation — project layout with clasp, Spreadsheet/Drive ops, LockService for concurrency, ScriptCache, web app RPC pattern with Thai error messages, PDF generation with placeholders, schema migrations, OAuth scopes. Use when working with .gs/.js files in clasp projects, when appsscript.json or .clasp.json exists, or when the user mentions Google Apps Script / GAS / clasp.
+description: Google Apps Script best practices for production web apps and automation — project layout with clasp, Spreadsheet/Drive ops, LockService for concurrency, ScriptCache, web app RPC pattern with Thai error messages, PDF generation with placeholders, schema migrations, OAuth scopes, time-driven triggers, onFormSubmit, UrlFetchApp / LINE Messaging API, email quotas, deployment versioning (/dev vs /exec), and 6-minute limit workarounds. Use whenever working with .gs/.js files in clasp projects, when appsscript.json or .clasp.json exists, when code uses SpreadsheetApp / DriveApp / HtmlService / UrlFetchApp / doGet / doPost / onEdit / google.script.run, or when the user mentions Google Apps Script, GAS, clasp, Apps Script — including Thai phrasing such as "แอปสคริปต์", "สคริปต์ชีต", "ทำระบบด้วย Google Sheet", "ส่งเมลจากชีต", "แจ้งเตือน LINE จากชีต", or automating Google Sheets/Forms/Drive in any way.
 ---
 
 # Google Apps Script — Best Practices
@@ -16,9 +16,11 @@ description: Google Apps Script best practices for production web apps and autom
 - **✓ Good** — แม่แบบที่ถูก
 - **Edge cases** — ข้อยกเว้น ถ้ามี
 
+ไฟล์ยาว (spreadsheet-ops, pdf-generation, external-frontend, drive-ops) มีสารบัญต้นไฟล์ — ข้ามไป rule ที่ตรงกับงานได้เลย
+
 ## เมื่อ trigger
 
-ใช้ rule ตามบริบทของ task:
+ใช้ rule ตามบริบทของ task (อ่านได้หลายไฟล์ถ้างานคาบเกี่ยว):
 
 | ผู้ใช้กำลังทำ | อ่านกฎเหล่านี้ |
 |---|---|
@@ -38,13 +40,22 @@ description: Google Apps Script best practices for production web apps and autom
 | handle error + user-facing message | `rules/error-handling.md` |
 | debug, log, execution history | `rules/testing-debugging.md` |
 | log boundary RPC client+server, mask sensitive, debug ฝั่ง user | `rules/logging-boundaries.md` |
+| ตั้งงานอัตโนมัติรายวัน/รายชั่วโมง, onEdit, onFormSubmit | `rules/triggers.md` |
+| เรียก API ภายนอก, LINE Messaging API, webhook | `rules/urlfetch-external-api.md` |
+| deploy แล้วเว็บไม่อัพเดท, /dev vs /exec, rollback, .claspignore | `rules/deployment-versioning.md` |
+| งาน batch ใหญ่ / เกิน 6-minute limit | `rules/long-running-jobs.md` |
+| ส่งอีเมลแจ้งเตือน, quota email, แจ้ง admin เมื่อ error | `rules/email-notifications.md` |
+| เก็บ API key / config — Properties vs Config sheet | `rules/properties-service.md` |
 
 ## หลักการรวม
 
 1. **ทุก server function ที่ client เรียกได้ ต้องคืน `Result<T>` envelope** — ไม่ throw ออกไป client เห็น stack trace
-2. **Sheet อ่านครั้งเดียวด้วย `getDataRange().getValues()`** — แต่ **เขียนทีละเซลล์** ถ้าตารางมี merged cells
+2. **Sheet อ่านครั้งเดียวด้วย `getDataRange().getValues()`** — เขียนแบบ batch ถ้าไม่มี merged cells, เขียนทีละเซลล์เฉพาะโซนที่มี merge
 3. **Lazy resource creation** — folder ID, sheet, column สร้างให้อัตโนมัติตอน startup เก็บไว้ใน Config sheet
-4. **Cache `auth.uid()`-equivalent + ผลคำนวณซ้ำ** ผ่าน `CacheService.getScriptCache()` พร้อม invalidate
-5. **LockService รอบ mutation ที่ชนได้** เช่น generate PDF, append row ที่มี side-effect
-6. **เก็บ folder ID ใน Config sheet** ไม่ใช่ใน script property — แก้ง่ายไม่ต้อง redeploy
+4. **Cache user lookup + ผลคำนวณซ้ำ** ผ่าน `CacheService.getScriptCache()` พร้อม invalidate
+5. **LockService รอบ mutation ที่ชนได้** เช่น generate PDF, delete/append row — พร้อม `try/finally { releaseLock() }`
+6. **เก็บค่าที่ admin ต้องแก้ได้ใน Config sheet, เก็บ secret ใน Script Properties** — ไม่ hardcode
 7. **Error message ภาษาไทยที่ user เข้าใจ** + Logger.log ภาษาอังกฤษสำหรับ developer
+8. **Log ทุก RPC boundary** — `console.log` ฝั่ง client, `Logger.log` ฝั่ง server (entry + exit)
+9. **บังคับ text format ให้ฟิลด์เลขที่มี leading zero** — เบอร์โทร, เลขบัตร, รหัส (`setNumberFormat('@')` + apostrophe)
+10. **คำนวณค่าสำคัญซ้ำฝั่ง server** — ไม่เชื่อเปอร์เซ็นต์/ยอดรวมที่ client ส่งมา

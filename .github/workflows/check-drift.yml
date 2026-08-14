@@ -1,0 +1,21 @@
+name: Check generated files are in sync
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Regenerate derived files
+        run: bash build.sh
+      - name: Fail if PROMPT.md / .clinerules / .windsurfrules are stale
+        run: |
+          if ! git diff --exit-code -- PROMPT.md .clinerules .windsurfrules; then
+            echo ""
+            echo "::error::Derived files are out of date. Run ./build.sh and commit the result."
+            exit 1
+          fi

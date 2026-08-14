@@ -7,19 +7,21 @@ Trigger detection — apply when:
 - Files with `.gs` extension exist
 - `appsscript.json` or `.clasp.json` in project root
 - Code references `SpreadsheetApp`, `DriveApp`, `HtmlService`, `UrlFetchApp`, `LockService`, etc.
+- `doGet` / `doPost` / `onEdit` / `onFormSubmit` handlers or time-driven triggers
 - HTML files use `google.script.run`
 
 ## Core principles
 
 1. Every server function returns a `{ok, message/data}` envelope — never throw to client
-2. Read sheets once with `getDataRange().getValues()` but write per-cell if merged cells possible
+2. Read sheets once with `getDataRange().getValues()`; batch-write when no merged cells, per-cell only in merged zones
 3. Lazy resource creation (folders, sheets, columns) on startup via Config sheet
 4. Cache user lookups via `CacheService.getScriptCache()` with explicit invalidation
 5. `LockService.getScriptLock()` around concurrent mutations + try/finally release
-6. Thai user-facing messages, English Logger.log
-7. Log every RPC boundary (console.log client + Logger.log server)
-8. Force text format for leading-zero numeric fields (phone, ID, postal code)
-9. Recompute critical values server-side — never trust client
+6. Admin-editable values in Config sheet, secrets in Script Properties — never hardcoded
+7. Thai user-facing messages, English Logger.log
+8. Log every RPC boundary (console.log client + Logger.log server)
+9. Force text format for leading-zero numeric fields (phone, ID, postal code)
+10. Recompute critical values server-side — never trust client
 
 ## Topic-to-file mapping
 
@@ -39,6 +41,12 @@ Trigger detection — apply when:
 - Logging boundaries: `rules/logging-boundaries.md`
 - Debug / testing: `rules/testing-debugging.md`
 - Project structure: `rules/project-structure.md`
+- Triggers (time-driven, onEdit, onFormSubmit): `rules/triggers.md`
+- External APIs / LINE / webhooks: `rules/urlfetch-external-api.md`
+- Deployment & versioning (/dev vs /exec): `rules/deployment-versioning.md`
+- Long-running jobs (6-min limit): `rules/long-running-jobs.md`
+- Email & notifications: `rules/email-notifications.md`
+- PropertiesService vs Config sheet: `rules/properties-service.md`
 
 When suggesting code, reference rule numbers (e.g., "per spreadsheet-ops Rule #2").
 Show ✗ Bad / ✓ Good patterns when correcting common mistakes.

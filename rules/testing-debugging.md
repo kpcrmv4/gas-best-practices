@@ -112,13 +112,16 @@ async function test_generatePdf() {
 test_generatePdf().catch(e => { console.error(e); process.exit(1); });
 ```
 
-ต้อง implement `doPost(e)` ที่ dispatch ฟังก์ชันตามชื่อ:
+ต้อง implement `doPost(e)` ที่ dispatch ฟังก์ชันตามชื่อ — **allow-list เป็นส่วนหนึ่งของ dispatcher เสมอ** (dispatcher ที่เรียก `globalThis[name]` ตรง ๆ = ใครก็เรียก function ภายในทุกตัวได้ รวมถึง `_test_*` และ helper ที่ข้าม auth):
 
 ```javascript
+const RPC_ALLOWED = ['login', 'saveRecord', 'generatePdfForRecord' /* ... */];
+
 function doPost(e) {
   try {
     const { function: name, args } = JSON.parse(e.postData.contents);
-    const result = globalThis[name](...args); // ⚠️ ระวัง — ไม่ปลอดภัยใน production
+    if (!RPC_ALLOWED.includes(name)) throw new Error('forbidden: ' + name);
+    const result = globalThis[name](...args);
     return ContentService.createTextOutput(JSON.stringify(result))
       .setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
@@ -126,13 +129,6 @@ function doPost(e) {
       .setMimeType(ContentService.MimeType.JSON);
   }
 }
-```
-
-**Security:** restrict `globalThis[name]` ด้วย allow-list:
-
-```javascript
-const RPC_ALLOWED = ['login', 'saveRecord', 'generatePdfForRecord', /* ... */];
-if (!RPC_ALLOWED.includes(name)) throw new Error('forbidden');
 ```
 
 ---
