@@ -29,6 +29,7 @@ When working on GAS code, consult `rules/<topic>.md` based on the task:
 | Drive folders, file sharing, image preview | `rules/drive-ops.md` |
 | Concurrent operations | `rules/lock-service.md` |
 | Caching queries | `rules/cache-service.md` |
+| Overwrite protection, bulk-delete guard, post-edit verification | `rules/data-integrity.md` |
 | Year/month/enum dropdowns | `rules/dynamic-dropdowns.md` |
 | Auth, role check, OAuth scopes | `rules/security.md` |
 | Adding tables/columns to live system | `rules/schema-migrations.md` |

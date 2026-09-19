@@ -1,6 +1,6 @@
 ---
 name: gas-best-practices
-description: Google Apps Script best practices for production web apps and automation — project layout with clasp, Spreadsheet/Drive ops, LockService for concurrency, ScriptCache, web app RPC pattern with Thai error messages, PDF generation with placeholders, schema migrations, OAuth scopes, time-driven triggers, onFormSubmit, UrlFetchApp / LINE Messaging API, email quotas, deployment versioning (/dev vs /exec), and 6-minute limit workarounds. Use whenever working with .gs/.js files in clasp projects, when appsscript.json or .clasp.json exists, when code uses SpreadsheetApp / DriveApp / HtmlService / UrlFetchApp / doGet / doPost / onEdit / google.script.run, or when the user mentions Google Apps Script, GAS, clasp, Apps Script — including Thai phrasing such as "แอปสคริปต์", "สคริปต์ชีต", "ทำระบบด้วย Google Sheet", "ส่งเมลจากชีต", "แจ้งเตือน LINE จากชีต", or automating Google Sheets/Forms/Drive in any way.
+description: Google Apps Script best practices for production web apps and automation — project layout with clasp, Spreadsheet/Drive ops, LockService for concurrency, ScriptCache, web app RPC pattern with Thai error messages, PDF generation with placeholders, schema migrations, data-integrity guards for overwrite/bulk-delete protection, OAuth scopes, time-driven triggers, onFormSubmit, UrlFetchApp / LINE Messaging API, email quotas, deployment versioning (/dev vs /exec), and 6-minute limit workarounds. Use whenever working with .gs/.js files in clasp projects, when appsscript.json or .clasp.json exists, when code uses SpreadsheetApp / DriveApp / HtmlService / UrlFetchApp / doGet / doPost / onEdit / google.script.run, or when the user mentions Google Apps Script, GAS, clasp, Apps Script — including Thai phrasing such as "แอปสคริปต์", "สคริปต์ชีต", "ทำระบบด้วย Google Sheet", "ส่งเมลจากชีต", "แจ้งเตือน LINE จากชีต", or automating Google Sheets/Forms/Drive in any way.
 ---
 
 # Google Apps Script — Best Practices
@@ -33,6 +33,7 @@ description: Google Apps Script best practices for production web apps and autom
 | จัดการ folder/file ใน Drive | `rules/drive-ops.md` |
 | operation ที่ user หลายคนอาจชนกัน | `rules/lock-service.md` |
 | query ที่ซ้ำบ่อย | `rules/cache-service.md` |
+| เขียนทับข้อมูลจริง, กันลบยกชุด, ตรวจข้อมูลหลังแก้ | `rules/data-integrity.md` |
 | custom menu ใน Sheet | `rules/onopen-menu.md` |
 | dropdown ปี/เดือน/enum ที่ไม่ฟิกตายตัว | `rules/dynamic-dropdowns.md` |
 | auth, role check, OAuth scope | `rules/security.md` |

@@ -202,3 +202,23 @@ GAS execution quota = 6 นาที — รู้ว่า step ไหนช้
 | Custom function exec | 30 s | 30 s |
 
 ทำ counter ใน Config sheet ถ้า near quota — ส่ง alert ก่อนพัง
+
+---
+
+## Rule #11: ห้ามให้ `| grep` มาบังรหัสจบของเทสในคำสั่ง deploy
+
+**Why:** `npm test | grep 'fail'` คืน exit code ของ **grep** ไม่ใช่ของเทส — เคย `clasp deploy` ขึ้น production ทั้งที่เทสพัง 3 ตัว เพราะ pipe บังไว้
+
+```bash
+# ✗ Bad — exit code ของ grep บังของเทส, && ผ่านเสมอ
+node --test tests/ | grep -E '^# (pass|fail)' && clasp push && clasp deploy -i "$DEPLOY_ID"
+
+# ✓ Good — เทสเป็นตัวตัดสิน, output ทิ้งไป
+node --test tests/ > /dev/null && clasp push && clasp deploy -i "$DEPLOY_ID"
+
+# ✓ Good — ถ้าอยากเห็น summary ด้วย ใช้ PIPESTATUS (bash) หรือ pipefail
+set -o pipefail
+node --test tests/ | tail -20 && clasp push
+```
+
+**Edge case:** หลักเดียวกันกับทุก pipeline ที่เป็น gate ของ deploy — `tee`, `head`, `sort` บัง exit code ได้หมด

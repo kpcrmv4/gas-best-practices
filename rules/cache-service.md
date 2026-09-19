@@ -104,3 +104,20 @@ try {
 | Performance | เร็ว (in-memory) | ช้ากว่า (persistent) |
 
 **ห้ามใช้ PropertiesService เป็น cache** — มันคือ DB ไม่ใช่ cache TTL ไม่มี
+
+---
+
+## Rule #8: cache key ต้องผูกกับ **code version** ไม่ใช่แค่ data revision
+
+**Why:** cache key เป็น `'all_' + rev_()` แล้ว deploy โค้ดใหม่ที่เปลี่ยน *รูปร่าง* ของ payload — `rev` ไม่ขยับเพราะข้อมูลไม่ได้เปลี่ยน ผลคือหน้าเว็บกิน payload แบบเก่าจาก cache ต่ออีก 6 ชั่วโมง วัดผลการ optimize ได้ `-0.2%` แล้วนั่งงงว่าทำไมไม่เร็วขึ้น
+
+```javascript
+// ✗ Bad — deploy โค้ดใหม่แล้ว cache เก่ายังถูกเสิร์ฟต่อ
+var ck = 'all_' + rev_();
+
+// ✓ Good — bump ตัวเลขนี้ทุกครั้งที่เปลี่ยนโครงสร้าง payload
+var ALL_CACHE_VERSION = 6;
+var ck = 'all_v' + ALL_CACHE_VERSION + '_' + rev_();
+```
+
+**Edge case:** `ALL_CACHE_VERSION` ที่ลืม bump จะเงียบสนิท — ใส่ไว้ใน checklist ของ deploy คู่กับ version stamp ([deployment-versioning.md](deployment-versioning.md))
