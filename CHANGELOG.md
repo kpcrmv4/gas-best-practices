@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v1.2.0 — 2026-09-20
 
 ### เพิ่ม rule file ใหม่ (22 → 23 ไฟล์)
 
@@ -10,6 +10,7 @@
 
 - `cache-service.md` Rule #8 (ใหม่) — cache key ต้องผูกกับ code version ไม่ใช่แค่ data revision ไม่งั้น deploy แล้ว payload เก่าถูกเสิร์ฟต่อจนหมด TTL
 - `testing-debugging.md` Rule #11 (ใหม่) — `| grep` บัง exit code ของเทสในคำสั่ง deploy (เคย deploy ขึ้น production ทั้งที่เทสพัง 3 ตัว)
+- `data-integrity.md` Rule #4 — แก้ตัวอย่าง `✓ Good` ที่ผูกการล็อกไว้กับธงที่ไม่เคยถูกเซต ทำให้ payload จาก client ทับ field ที่ server เป็นเจ้าของได้อยู่ดี ตอนนี้ล็อกจากค่าที่ server ถืออยู่จริง
 
 ## v1.1.0 — 2026-08-14
 
