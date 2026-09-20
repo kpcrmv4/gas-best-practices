@@ -331,22 +331,27 @@ rows.push([b.id, b.name, b.kind, b.phone,
 ### ✓ Good
 
 ```javascript
-// อ่านค่าที่ระบบเป็นเจ้าของไว้ก่อนเขียนทับ
-var keepPaid = {}, keepStatus = {}, hasGeneral = {};
+// 1) อ่านค่าที่ server เป็นเจ้าของไว้ก่อน — เก็บเฉพาะแถวที่ "มีค่าอยู่จริง"
+//    แถวที่ยังว่างไม่ต้องเก็บ ปล่อยให้ client เขียนค่าแรกเข้ามาได้
+var keepPaid = {}, keepStatus = {};
 existingRows.forEach(function (r) {
-  keepPaid[r['รหัส']] = r['ยอดที่รับจริง'];
-  keepStatus[r['รหัส']] = r['สถานะ'];
+  var id = r['รหัส'];
+  if (r['ยอดที่รับจริง'] !== '' && r['ยอดที่รับจริง'] != null) keepPaid[id] = r['ยอดที่รับจริง'];
+  if (r['สถานะ']) keepStatus[id] = r['สถานะ'];
 });
 
-rows.push(function () {
-  var locked = hasGeneral[b.id] && Object.prototype.hasOwnProperty.call(keepPaid, b.id);
+// 2) แถวไหนที่ระบบมีค่าของตัวเองอยู่แล้ว = ล็อก ไม่ให้ payload จาก client ทับ
+var hasOwn = Object.prototype.hasOwnProperty;
+var rows = body.state.bookings.map(function (b) {
   return [b.id, b.name, b.kind, b.phone,
-          locked ? keepPaid[b.id] : (Number(b.paidAmount) || ''),
-          locked ? keepStatus[b.id] : (ST_TH[b.status] || 'ยังไม่ชำระ')];
-}());
+          hasOwn.call(keepPaid, b.id)   ? keepPaid[b.id]   : (Number(b.paidAmount) || ''),
+          hasOwn.call(keepStatus, b.id) ? keepStatus[b.id] : (ST_TH[b.status] || 'ยังไม่ชำระ')];
+});
 ```
 
-**Edge case:** ทางที่สะอาดกว่าคือ **อย่าให้ client ส่ง field พวกนี้มาเลย** — ให้แก้ผ่าน endpoint เฉพาะทาง (`action=recordPayment`) ที่ตรวจสิทธิ์และคำนวณเองฝั่ง server ([web-app-rpc.md](web-app-rpc.md) Rule: คำนวณค่าสำคัญซ้ำฝั่ง server)
+**Edge case:** ตรวจว่า "ล็อก" ผูกกับค่าที่ server มีอยู่จริง ไม่ใช่ flag ที่ประกาศไว้เฉย ๆ — ธง `locked` ที่ไม่เคยถูกเซตเป็น `true` จะเงียบสนิทและทำตัวเหมือนไม่มีด่านเลย
+
+**Edge case 2:** ทางที่สะอาดกว่าคือ **อย่าให้ client ส่ง field พวกนี้มาเลย** — ให้แก้ผ่าน endpoint เฉพาะทาง (`action=recordPayment`) ที่ตรวจสิทธิ์และคำนวณเองฝั่ง server ([web-app-rpc.md](web-app-rpc.md) Rule: คำนวณค่าสำคัญซ้ำฝั่ง server)
 
 ---
 
