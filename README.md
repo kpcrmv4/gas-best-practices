@@ -273,7 +273,8 @@ aider --read /path/to/gas-best-practices/AGENTS.md \
 | [pdf-generation.md](rules/pdf-generation.md) | template placeholders, signature anchor, image trim, business guard |
 | [drive-ops.md](rules/drive-ops.md) | Config sheet, lazy folder creation, **signature preview via base64**, sharing |
 | [lock-service.md](rules/lock-service.md) | concurrency control, timeout choice, finally release |
-| [cache-service.md](rules/cache-service.md) | TTL strategy, invalidation, size limits |
+| [cache-service.md](rules/cache-service.md) | TTL strategy, invalidation, size limits, cache key ผูก code version |
+| [data-integrity.md](rules/data-integrity.md) | บังคับ `rev`, circuit breaker กันลบยกชุด, ห้าม client ทับ field ของ server, ตรวจ "ตัวตน" ไม่ใช่ยอดรวม |
 | [dynamic-dropdowns.md](rules/dynamic-dropdowns.md) | ปี/เดือน/ค่า enum ที่ไม่ฟิกตายตัว, datalist pattern |
 | [security.md](rules/security.md) | requireUser/Role, session tokens, password hashing, OAuth scope |
 | [schema-migrations.md](rules/schema-migrations.md) | idempotent ensureSchema, column add, version tracking |
@@ -320,7 +321,7 @@ gas-best-practices/
 ├── install.sh           # one-liner setup
 ├── install.ps1
 ├── build.sh             # generate PROMPT.md + sync .clinerules/.windsurfrules
-├── rules/               # กฎแยกตามหัวข้อ — แต่ละไฟล์ standalone (22 ไฟล์)
+├── rules/               # กฎแยกตามหัวข้อ — แต่ละไฟล์ standalone (23 ไฟล์)
 │   ├── project-structure.md
 │   ├── spreadsheet-ops.md
 │   └── ...

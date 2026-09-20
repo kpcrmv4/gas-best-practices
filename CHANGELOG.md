@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### เพิ่ม rule file ใหม่ (22 → 23 ไฟล์)
+
+- `rules/data-integrity.md` — 6 rule จาก incident จริงในระบบจองบัตรที่ใช้ GAS เป็นฐานข้อมูลเงิน: บังคับส่ง `rev` ทุก write (ด่านที่ข้ามได้ด้วยการไม่ส่ง field ไม่ใช่ด่าน), circuit breaker กันลบยกชุด, งานหลังบันทึกต้องอยู่ใน try/catch, ห้าม payload จาก client ทับ field ที่ server เป็นเจ้าของ, reconcile ต้องอ่านทุกที่ที่เก็บค่าจริง, ยืนยันผลด้วย "ตัวตน" ไม่ใช่ "ยอดรวม"
+
+### ปรับปรุงเนื้อหาเดิม
+
+- `cache-service.md` Rule #8 (ใหม่) — cache key ต้องผูกกับ code version ไม่ใช่แค่ data revision ไม่งั้น deploy แล้ว payload เก่าถูกเสิร์ฟต่อจนหมด TTL
+- `testing-debugging.md` Rule #11 (ใหม่) — `| grep` บัง exit code ของเทสในคำสั่ง deploy (เคย deploy ขึ้น production ทั้งที่เทสพัง 3 ตัว)
+
 ## v1.1.0 — 2026-08-14
 
 ### เพิ่ม rule files ใหม่ 6 หัวข้อ (16 → 22 ไฟล์)
