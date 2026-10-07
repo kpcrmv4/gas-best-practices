@@ -6,7 +6,7 @@ Single-page web app ขนาดเล็กที่ใช้ pattern หลั
 
 | ไฟล์ | ใช้ pattern จาก |
 |---|---|
-| `appsscript.json` | `rules/project-structure.md` — V8, timezone, scope แคบ (`drive.file`) |
+| `appsscript.json` | `rules/project-structure.md` — V8, timezone, scope แคบ (แค่ `spreadsheets` เพราะไม่ได้ใช้ Drive) |
 | `Main.js` | schema idempotent, `readSheet_`, `appendRowByHeaders_`, `sanitizeForClient_` |
 | `Users.js` | `rules/security.md` — hash+salt, session token, `requireSession_`/`requireRole_` |
 | `Records.js` | `rules/web-app-rpc.md`, `rules/lock-service.md` — Result envelope, validate boundary, Lock+finally |

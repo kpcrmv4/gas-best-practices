@@ -536,6 +536,7 @@ function getAppInfo() {
 | #5 | ลบไฟล์เก่าก่อน upload ใหม่ |
 | #6 | validate dataURL ฝั่ง server |
 | #7 | folder ของ user เก็บแยก |
+| #8 | scope ของ DriveApp: `drive` ไม่ใช่ `drive.file` |
 
 ## Rule #1: เก็บ folder ID ใน Config sheet — ไม่ใช่ hardcode
 
@@ -862,6 +863,45 @@ function ensureTeacherParentFolder_(username) {
 ```
 
 ผลดี: ดู Drive แล้วเข้าใจทันที + แชร์ folder รายบุคคลกับ accountant/HR ได้
+
+---
+
+## Rule #8: scope ของ DriveApp — ใช้ `drive` ไม่ใช่ `drive.file`
+
+**Bug ที่เจอจริง:** แอปถ่ายรูปแล้วเก็บเข้า Drive ประกาศ scope แคบ ๆ ตามหลัก "ขอเท่าที่ใช้":
+
+```json
+"oauthScopes": [
+  "https://www.googleapis.com/auth/spreadsheets",
+  "https://www.googleapis.com/auth/drive.file"
+]
+```
+
+พอกดบันทึกรูป `DriveApp.createFolder()` (Rule #2) ล้มทันที:
+
+```
+สิทธิ์ที่ระบุไว้ไม่เพียงพอที่จะเรียกใช้ DriveApp.createFolder สิทธิ์ที่จำเป็นคือ https://www.googleapis.com/auth/drive
+```
+
+**ทำไม:** `drive.file` จำกัดให้เข้าถึงเฉพาะไฟล์ที่แอปสร้างเอง แต่ `DriveApp` ไม่รองรับ scope นี้เลย — reference ของ `DriveApp` ระบุ scope ของ `createFile` และ `createFolder` ไว้แค่ `https://www.googleapis.com/auth/drive` ตัวเดียว
+
+### ✓ Good
+
+```json
+"oauthScopes": [
+  "https://www.googleapis.com/auth/spreadsheets",
+  "https://www.googleapis.com/auth/drive"
+]
+```
+
+| ใช้ DriveApp ทำอะไร | scope |
+|---|---|
+| เขียน: `createFile`, `createFolder`, `Folder.createFile`, `setSharing`, `setTrashed` | `drive` |
+| อ่านอย่างเดียว: `getFileById`, `getFolderById`, `getBlob` | `drive.readonly` |
+
+- ตอน authorize Google จะเตือนว่าแอปเข้าถึง Drive ทั้งหมด — เป็นข้อจำกัดของ `DriveApp` ไม่ใช่ความผิดของโค้ด
+- ถ้าต้องการ `drive.file` จริง ๆ ต้องไม่ใช้ `DriveApp` แต่เรียก Drive REST API เอง (`UrlFetchApp` + `ScriptApp.getOAuthToken()` + scope `script.external_request`) หรือใช้ Advanced Drive Service ซึ่งต้องเปิด API เพิ่ม
+- เพิ่ม scope ทีหลัง = เจ้าของต้องกด authorize ใหม่หนึ่งครั้ง ก่อนผู้ใช้คนอื่นจะใช้ฟีเจอร์นั้นได้
 
 ---
 
@@ -3368,7 +3408,6 @@ node_modules/
   },
   "oauthScopes": [
     "https://www.googleapis.com/auth/spreadsheets",
-    "https://www.googleapis.com/auth/drive.file",
     "https://www.googleapis.com/auth/script.external_request"
   ]
 }
@@ -3380,7 +3419,7 @@ node_modules/
 
 **`access: ANYONE_ANONYMOUS`** เหมาะกับระบบที่มี login ของตัวเอง (session token) — ถ้า user ทุกคนมี Google account ใน domain เดียวกัน ใช้ `DOMAIN` จะปลอดภัยกว่า
 
-**Scope ใน template นี้เริ่มจากแคบที่สุด** — `drive.file` (เฉพาะไฟล์ที่ script สร้างเอง) ขยายเป็น `drive` เต็มก็ต่อเมื่อต้องอ่านไฟล์ที่ script ไม่ได้สร้าง เช่น template ที่ user วางเอง (เหตุผลใน `rules/security.md` Rule #4)
+**Scope ใน template นี้เริ่มจากแคบที่สุด** — ยังไม่มี scope ของ Drive เพราะ template ไม่ได้ใช้ Drive เพิ่มเมื่อใช้จริง: `DriveApp` ที่เขียนไฟล์ (`createFile`, `createFolder`) ต้องใช้ `drive` เต็ม เพราะ `DriveApp` ไม่รับ `drive.file` ส่วน `DriveApp` ที่แค่อ่านใช้ `drive.readonly` (เหตุผลใน `rules/security.md` Rule #4)
 
 ## Rule: ห้าม commit `appsscript.json` ที่มี `webapp.deploymentId` หรือ `scriptId` แปลก ๆ
 
@@ -3796,7 +3835,7 @@ if (expected !== user.PasswordHash) throw new Error('password ผิด');
 {
   "oauthScopes": [
     "https://www.googleapis.com/auth/spreadsheets",          // อ่าน/เขียน Sheet
-    "https://www.googleapis.com/auth/drive.file",            // เฉพาะไฟล์ที่ script สร้างเอง — ดีกว่า /drive
+    "https://www.googleapis.com/auth/drive",                 // ใช้ DriveApp (createFile/createFolder ฯลฯ) — DriveApp ไม่รับ drive.file
     "https://www.googleapis.com/auth/script.external_request",  // UrlFetch
     "https://www.googleapis.com/auth/userinfo.email"         // ดู email user
   ]
@@ -3804,9 +3843,11 @@ if (expected !== user.PasswordHash) throw new Error('password ผิด');
 ```
 
 **Scope hierarchy (จาก narrow → broad):**
-- `drive.file` — เฉพาะไฟล์ที่ script สร้าง / user เลือกผ่าน picker ← **ใช้ตัวนี้ถ้าได้**
-- `drive.readonly` — อ่านทั้ง Drive
-- `drive` — full access — **หลีกเลี่ยง**
+- `drive.file` — เฉพาะไฟล์ที่ script สร้าง / user เลือกผ่าน picker — **ใช้กับ `DriveApp` ไม่ได้** ใช้ได้เฉพาะตอนเรียก Drive REST API เอง (`UrlFetchApp` + `ScriptApp.getOAuthToken()`), Advanced Drive Service หรือ Google Picker
+- `drive.readonly` — อ่านทั้ง Drive ← ใช้เมื่อ `DriveApp` แค่อ่าน (`getFileById`, `getFolderById`)
+- `drive` — full access ← **จำเป็นทุกครั้งที่ `DriveApp` เขียน** (`createFile`, `createFolder`, `Folder.createFile`, `setSharing`, `setTrashed`)
+
+**DriveApp กับ `drive.file` (เจอจริง):** ประกาศ `drive.file` แล้วเรียก `DriveApp.createFolder()` → runtime error `สิทธิ์ที่ระบุไว้ไม่เพียงพอที่จะเรียกใช้ DriveApp.createFolder สิทธิ์ที่จำเป็นคือ https://www.googleapis.com/auth/drive` (อังกฤษ: "The script does not have permission to perform that action. Required permissions: https://www.googleapis.com/auth/drive") — reference ของ `DriveApp` ระบุ scope ของ `createFile` / `createFolder` ไว้แค่ `auth/drive` ตัวเดียว ถ้าใช้ `DriveApp` เขียนไฟล์ ให้ประกาศ `drive` ไปเลย อย่าเดา `drive.file` เพราะดูแคบกว่า
 
 ---
 

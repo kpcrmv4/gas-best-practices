@@ -11,6 +11,7 @@
 | #5 | ลบไฟล์เก่าก่อน upload ใหม่ |
 | #6 | validate dataURL ฝั่ง server |
 | #7 | folder ของ user เก็บแยก |
+| #8 | scope ของ DriveApp: `drive` ไม่ใช่ `drive.file` |
 
 ## Rule #1: เก็บ folder ID ใน Config sheet — ไม่ใช่ hardcode
 
@@ -337,3 +338,42 @@ function ensureTeacherParentFolder_(username) {
 ```
 
 ผลดี: ดู Drive แล้วเข้าใจทันที + แชร์ folder รายบุคคลกับ accountant/HR ได้
+
+---
+
+## Rule #8: scope ของ DriveApp — ใช้ `drive` ไม่ใช่ `drive.file`
+
+**Bug ที่เจอจริง:** แอปถ่ายรูปแล้วเก็บเข้า Drive ประกาศ scope แคบ ๆ ตามหลัก "ขอเท่าที่ใช้":
+
+```json
+"oauthScopes": [
+  "https://www.googleapis.com/auth/spreadsheets",
+  "https://www.googleapis.com/auth/drive.file"
+]
+```
+
+พอกดบันทึกรูป `DriveApp.createFolder()` (Rule #2) ล้มทันที:
+
+```
+สิทธิ์ที่ระบุไว้ไม่เพียงพอที่จะเรียกใช้ DriveApp.createFolder สิทธิ์ที่จำเป็นคือ https://www.googleapis.com/auth/drive
+```
+
+**ทำไม:** `drive.file` จำกัดให้เข้าถึงเฉพาะไฟล์ที่แอปสร้างเอง แต่ `DriveApp` ไม่รองรับ scope นี้เลย — reference ของ `DriveApp` ระบุ scope ของ `createFile` และ `createFolder` ไว้แค่ `https://www.googleapis.com/auth/drive` ตัวเดียว
+
+### ✓ Good
+
+```json
+"oauthScopes": [
+  "https://www.googleapis.com/auth/spreadsheets",
+  "https://www.googleapis.com/auth/drive"
+]
+```
+
+| ใช้ DriveApp ทำอะไร | scope |
+|---|---|
+| เขียน: `createFile`, `createFolder`, `Folder.createFile`, `setSharing`, `setTrashed` | `drive` |
+| อ่านอย่างเดียว: `getFileById`, `getFolderById`, `getBlob` | `drive.readonly` |
+
+- ตอน authorize Google จะเตือนว่าแอปเข้าถึง Drive ทั้งหมด — เป็นข้อจำกัดของ `DriveApp` ไม่ใช่ความผิดของโค้ด
+- ถ้าต้องการ `drive.file` จริง ๆ ต้องไม่ใช้ `DriveApp` แต่เรียก Drive REST API เอง (`UrlFetchApp` + `ScriptApp.getOAuthToken()` + scope `script.external_request`) หรือใช้ Advanced Drive Service ซึ่งต้องเปิด API เพิ่ม
+- เพิ่ม scope ทีหลัง = เจ้าของต้องกด authorize ใหม่หนึ่งครั้ง ก่อนผู้ใช้คนอื่นจะใช้ฟีเจอร์นั้นได้

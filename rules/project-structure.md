@@ -48,7 +48,6 @@ node_modules/
   },
   "oauthScopes": [
     "https://www.googleapis.com/auth/spreadsheets",
-    "https://www.googleapis.com/auth/drive.file",
     "https://www.googleapis.com/auth/script.external_request"
   ]
 }
@@ -60,7 +59,7 @@ node_modules/
 
 **`access: ANYONE_ANONYMOUS`** เหมาะกับระบบที่มี login ของตัวเอง (session token) — ถ้า user ทุกคนมี Google account ใน domain เดียวกัน ใช้ `DOMAIN` จะปลอดภัยกว่า
 
-**Scope ใน template นี้เริ่มจากแคบที่สุด** — `drive.file` (เฉพาะไฟล์ที่ script สร้างเอง) ขยายเป็น `drive` เต็มก็ต่อเมื่อต้องอ่านไฟล์ที่ script ไม่ได้สร้าง เช่น template ที่ user วางเอง (เหตุผลใน `rules/security.md` Rule #4)
+**Scope ใน template นี้เริ่มจากแคบที่สุด** — ยังไม่มี scope ของ Drive เพราะ template ไม่ได้ใช้ Drive เพิ่มเมื่อใช้จริง: `DriveApp` ที่เขียนไฟล์ (`createFile`, `createFolder`) ต้องใช้ `drive` เต็ม เพราะ `DriveApp` ไม่รับ `drive.file` ส่วน `DriveApp` ที่แค่อ่านใช้ `drive.readonly` (เหตุผลใน `rules/security.md` Rule #4)
 
 ## Rule: ห้าม commit `appsscript.json` ที่มี `webapp.deploymentId` หรือ `scriptId` แปลก ๆ
 

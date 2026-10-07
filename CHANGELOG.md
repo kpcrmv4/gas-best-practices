@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.2.1 — 2026-10-07
+
+### แก้เนื้อหาที่ผิด
+
+- `DriveApp` ใช้ scope `drive.file` ไม่ได้ (เจอจริงในแอปถ่ายรูปเก็บ Drive: `DriveApp.createFolder` ล้มพร้อมข้อความว่าต้องใช้ `auth/drive`) แก้ให้ตรงกันทุกที่:
+  - `security.md` Rule #4 — ตัวอย่าง scope และลำดับ scope บอกว่า `DriveApp` ที่เขียนไฟล์ต้องใช้ `drive`, ที่แค่อ่านใช้ `drive.readonly`, `drive.file` ใช้ได้เฉพาะกับ Drive REST API / Advanced Drive Service / Picker
+  - `drive-ops.md` Rule #8 (ใหม่) — scope ของ `DriveApp` พร้อมตารางเขียน/อ่าน
+  - `project-structure.md` — template `appsscript.json` ไม่ใส่ scope ของ Drive จนกว่าจะใช้จริง
+  - `examples/web-app-skeleton` — เอา `drive.file` ออก เพราะตัวอย่างไม่ได้ใช้ Drive
+
 ## v1.2.0 — 2026-09-20
 
 ### เพิ่ม rule file ใหม่ (22 → 23 ไฟล์)
