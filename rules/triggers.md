@@ -124,3 +124,53 @@ function dailyReport() {
 
 - ต้องแม่นระดับนาที → สร้าง trigger `everyMinutes(5)` แล้วเช็คเวลาเองในโค้ด หรือใช้ external cron เรียก `doGet`
 - timezone ของ `atHour` = timezone ใน `appsscript.json` — ตั้ง `"timeZone": "Asia/Bangkok"` ก่อน ไม่งั้นได้เวลา UTC
+
+---
+
+## Rule #8: แอปติดตั้ง trigger ให้ตัวเองตอนตั้งค่าครั้งแรก — ห้ามให้ผู้ใช้เปิด editor ไปรันฟังก์ชัน
+
+**Why:** คำแนะนำแบบ "เปิด Apps Script editor แล้วรัน `installTriggers()` หนึ่งครั้ง" ใช้ไม่ได้กับคนที่ไม่ใช่โปรแกรมเมอร์ (ไม่รู้ว่า editor อยู่ไหน เลือกฟังก์ชันตรงไหน) — ระบบจึง "ไม่เคยเตือน" ทั้งที่โค้ดถูก ให้แอปติดตั้ง trigger ให้ตัวเองในจังหวะที่เจ้าของใช้แอปอยู่แล้ว
+
+### ✓ Good — idempotent + flag + try/catch แยก เรียกจากเส้นทางตั้งค่าของแอป
+
+```javascript
+// เรียกได้หลายครั้งโดยไม่มี trigger ซ้ำ (Rule #1) และจำไว้ว่าทำแล้ว
+function ensureTriggers_() {
+  const props = PropertiesService.getScriptProperties();
+  if (props.getProperty('TRIGGERS_V') === '1') return { ok: true, already: true };
+  ensureTrigger_('dailyReminder', () =>
+    ScriptApp.newTrigger('dailyReminder').timeBased().everyDays(1).atHour(7).create()
+  );
+  props.setProperty('TRIGGERS_V', '1');            // เปลี่ยนเป็น '2' เมื่อชุด trigger เปลี่ยน
+  return { ok: true, already: false };
+}
+
+// 1) ตอนตั้งค่าครั้งแรก: หลังสร้างชีต/ข้อมูลเสร็จ (เส้นทาง setup ที่เจ้าของกดเอง หรือ lazily ครั้งแรกที่เจ้าของเปิดแอป)
+function setupFirstRun() {
+  const ss = getDataSpreadsheet_();
+  // ...สร้างแท็บ/หัวตาราง...
+  try {                                            // try/catch ของตัวเอง — ล้มแล้วหน้าแอปยังต้องเปิดได้
+    ensureTriggers_();
+  } catch (err) {
+    Logger.log('[setup] triggers: ' + err);        // เช่นเจ้าของยังไม่ได้อนุญาต scope script.scriptapp
+  }
+}
+
+// 2) ปุ่ม/สถานะในหน้าตั้งค่าของแอป — ให้ผู้ใช้เห็นว่าเปิดอยู่ และกดซ่อมได้เองเมื่อข้อ 1 ล้ม
+function getTriggerStatus() {
+  const on = ScriptApp.getProjectTriggers().some(t => t.getHandlerFunction() === 'dailyReminder');
+  return { on, text: on ? 'เปิดอยู่ — ตรวจทุกเช้าราว 07:00' : 'ปิดอยู่' };
+}
+function enableTriggers() {                        // ปุ่ม "เปิดการแจ้งเตือนอัตโนมัติ" ใน UI
+  try {
+    ensureTriggers_();
+    return getTriggerStatus();
+  } catch (err) {
+    throw new Error('เปิดไม่สำเร็จ: ' + err.message);   // UI แสดงข้อความนี้ ไม่ใช่เงียบ
+  }
+}
+```
+
+- ประกาศ `https://www.googleapis.com/auth/script.scriptapp` ใน `appsscript.json` ตั้งแต่แรก — จะได้ขอสิทธิ์พร้อมกันตอนเจ้าของเปิดครั้งแรก ไม่ใช่พังทีหลัง (ดู `rules/security.md` Rule #4)
+- trigger รันเป็น account ของคนที่ติดตั้ง (Rule #2) — ใน web app ที่รันเป็นเจ้าของ (`executeAs: USER_DEPLOYING`) คนที่กดปุ่มคือใครก็ได้ แต่ trigger จะเป็นของเจ้าของเสมอ ถูกต้องแล้ว
+- ห้ามเรียก `ensureTriggers_()` บนเส้นทางหลักของ `doGet` โดยไม่มี try/catch — scope ที่ยังไม่ได้อนุญาตจะทำให้ทั้งหน้าพัง

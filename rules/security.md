@@ -90,17 +90,49 @@ Trade-off: เพิ่ม sheet write ทุก login + ต้องล้า�
 
 ---
 
-## Rule #3: เก็บ password เป็น hash (PBKDF2) ไม่ใช่ plain text
+## Rule #3: เก็บ password/PIN เป็น hash ที่มี salt + pepper — ห้ามวน HMAC เป็นพัน ๆ รอบ
+
+**Why:** ใน GAS ไม่มี `crypto.subtle` และ `Utilities.computeHmacSha256Signature` ช้ามาก (หลายมิลลิวินาทีต่อครั้ง) — วน 10,000 รอบแบบ PBKDF2 ทำให้กดยืนยัน PIN แล้วค้าง "กำลังตรวจสอบ…" เกือบหนึ่งนาที (เจอจริงในแอปบันทึกรายรับรายจ่าย) และกับ PIN 4–6 หลัก การวนหลายรอบก็ไม่ช่วยอะไรถ้าใครได้ hash ไป (ลองครบทุกค่าได้ในไม่กี่วินาทีอยู่ดี) สิ่งที่กันได้จริงคือ **pepper ที่ไม่ได้อยู่ในชีต** และ **จำกัดจำนวนครั้งที่ลองผิด**
+
+### ✗ Bad — stretching ใน GAS
 
 ```javascript
 function hashPassword_(password, salt) {
-  // ใน GAS ไม่มี crypto.subtle — ใช้ Utilities.computeHmacSha256Signature ซ้ำ ๆ
   let bytes = Utilities.newBlob(password).getBytes();
   const saltBytes = Utilities.newBlob(salt).getBytes();
-  for (let i = 0; i < 10000; i++) {
+  for (let i = 0; i < 10000; i++) {            // ✗ ช้าเกือบนาทีต่อการ login หนึ่งครั้ง
     bytes = Utilities.computeHmacSha256Signature(bytes, saltBytes);
   }
   return Utilities.base64Encode(bytes);
+}
+```
+
+### ✓ Good — HMAC ครั้งเดียว: key = pepper ใน Script Properties, ข้อมูล = salt + password
+
+```javascript
+// pepper สร้างครั้งเดียวตอน setup (ใน LockService กันสองคนสร้างพร้อมกันแล้วทับกัน) — อยู่ใน Script Properties
+// เท่านั้น ไม่อยู่ในชีต คนที่ได้ชีตไปทั้งไฟล์ยังเดา hash ไม่ได้
+function pepper_() {
+  const props = PropertiesService.getScriptProperties();
+  let p = props.getProperty('AUTH_PEPPER');
+  if (p) return p;
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    p = props.getProperty('AUTH_PEPPER');
+    if (!p) {
+      p = Utilities.getUuid() + Utilities.getUuid();
+      props.setProperty('AUTH_PEPPER', p);
+    }
+    return p;
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function hashPassword_(password, salt) {
+  const sig = Utilities.computeHmacSha256Signature(salt + ':' + password, pepper_());
+  return Utilities.base64Encode(sig);               // ✓ ครั้งเดียว หลักมิลลิวินาที
 }
 
 function generateSalt_() {
@@ -116,6 +148,11 @@ const hash = hashPassword_(password, salt);
 const expected = hashPassword_(inputPassword, user.PasswordSalt);
 if (expected !== user.PasswordHash) throw new Error('password ผิด');
 ```
+
+**ต้องมีคู่กัน:** จำกัดจำนวนครั้งที่ลองผิด — นับใน CacheService ต่อ user (เช่น ผิด 5 ครั้งใน 15 นาที → ปฏิเสธจนกว่าจะหมดเวลา) เพราะกับ PIN สั้น ๆ นี่คือด่านจริง ไม่ใช่ความช้าของ hash
+
+- ถ้าจำเป็นต้อง stretching จริง ๆ (รหัสผ่านยาวของผู้ดูแล) ไม่เกิน 100–300 รอบ และวัดเวลาจริงใน GAS ก่อนใช้
+- ห้ามเก็บ PIN/รหัสผ่านเป็น plain text และห้ามเก็บ pepper ในชีตหรือในโค้ด
 
 ---
 

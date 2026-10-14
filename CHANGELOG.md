@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.2.2 — 2026-10-15
+
+### แก้เนื้อหาที่ผิด
+
+- `security.md` Rule #3 — เลิกแนะนำให้วน `Utilities.computeHmacSha256Signature` 10,000 รอบ (PBKDF2 ในมือ): ใน GAS ช้าเกือบนาทีต่อการ login (เจอจริง: กดยืนยัน PIN แล้วค้าง "กำลังตรวจสอบ…") ใช้ HMAC ครั้งเดียวที่ key เป็น pepper ใน Script Properties + salt ต่อผู้ใช้ และจำกัดจำนวนครั้งที่ลองผิดแทน
+
+### เพิ่ม rule
+
+- `triggers.md` Rule #8 — แอปติดตั้ง trigger ให้ตัวเองตอนตั้งค่าครั้งแรก (`ensureTriggers_()` idempotent + flag + try/catch แยก) และมีปุ่ม/สถานะในหน้าตั้งค่าของแอป — ห้ามบอกผู้ใช้ให้เปิด editor ไปรัน `installTriggers()`
+
 ## v1.2.1 — 2026-10-07
 
 ### แก้เนื้อหาที่ผิด
